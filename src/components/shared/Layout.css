@@ -1,0 +1,30 @@
+.appBar {
+    background: #2699FB;
+    color: #FFF;
+    flex-basis: 75px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+.content {
+    padding: 16px;
+    flex: 1 0 0;
+    display: flex;
+    align-items: center;
+}
+
+.container {
+    background: #FFF;
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+h2 {
+    text-align: center;
+    color: #2699FB;
+    margin: 1.8rem 0;
+}
