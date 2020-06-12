@@ -52,10 +52,11 @@ hr {
 input {
   padding: 16px;
   padding-left: 48px;
+  color: #2699FB;
   border: 1px solid #bce0fd;
   margin: 1rem 0;
   border-radius: 3px;
-  color: #222;
+  box-sizing: border-box;
 }
 
 input:focus {
@@ -67,7 +68,40 @@ input::-webkit-input-placeholder {
   color: rgba(188, 224, 253, 0.7);
 }
 
-input.signUp {
-  --currentColor: #2699FB;
+input.email {
   background: url('/assets/icons/envelope-square-solid.svg') 10px center / 28px 28px no-repeat;
+}
+
+input.profile {
+  margin-top: 0;
+  background: url('/assets/icons/user-alt-solid.svg') 15px center / 20px 20px no-repeat;
+}
+
+.upload-profile-pic {
+  width: 150px;
+  flex: 0 0 150px;
+  margin-bottom: 1.5rem;
+  align-self: center;
+  background: 
+    url('/assets/icons/plus.svg') 92% 8%/auto no-repeat,
+    url('/assets/icons/upload-profile-pic.svg') left top/cover no-repeat;
+}
+
+.terms {
+  font-size: 0.6rem;
+  color: #2699FB;
+  text-align: center;
+  line-height: 1.3rem;
+  margin-top: 1.3rem;
+}
+
+a {
+  color: #2699FB;
+}
+
+a.centered-link {
+  align-self: center;
+  font-size: 0.8rem;
+  margin-bottom: 0.9rem;
+  margin-top: 0.4rem;
 }
