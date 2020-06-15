@@ -1,13 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+
 import './index.css';
 import App from './App';
+import AuthContext from './auth/AuthContext';
 import * as serviceWorker from './serviceWorker';
+import { AuthClient } from './auth/auth';
+
+const client = new AuthClient();
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <AuthContext.Provider value={client}>
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  </AuthContext.Provider>,
   document.getElementById('root')
 );
 

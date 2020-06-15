@@ -1,30 +1,35 @@
 import React from 'react';
 import {
   BrowserRouter as Router,
-  Switch,
-  Route
+  Switch
 } from 'react-router-dom';
 
-import SignUp from './pages/sign-up/SignUp';
+import LogIn from './pages/log-in/LogIn';
 import ConfirmationCode from './pages/confirmation-code/ConfirmationCode';
-import ProfileDetails from './pages/sign-up/ProfileDetails';
+import ProfileDetails from './pages/on-boarding/ProfileDetails';
+import AnonymousRoute from './auth/AnonymousRoute';
+import AuthenticatedRoute from './auth/AuthenticatedRoute';
+import Chat from './pages/chat/Chat';
 
 function App() {
   return (
     <Router>
         <Switch>
-          <Route path="/sign-up/confirmation">
-            <ConfirmationCode />
-          </Route>
-          <Route path="/sign-up/profile">
+          <AnonymousRoute path="/on-boarding/profile">
             <ProfileDetails />
-          </Route>
-          <Route path="/sign-up">
-            <SignUp />
-          </Route>
-          <Route path="/">
-            <SignUp />
-          </Route>
+          </AnonymousRoute>
+          <AnonymousRoute path="/log-in/confirmation">
+            <ConfirmationCode />
+          </AnonymousRoute>
+          <AnonymousRoute path="/log-in">
+            <LogIn />
+          </AnonymousRoute>
+          <AuthenticatedRoute path="/chat">
+            <Chat />
+          </AuthenticatedRoute>
+          <AuthenticatedRoute path="/">
+            <Chat />
+          </AuthenticatedRoute>
         </Switch>
     </Router>
   );
