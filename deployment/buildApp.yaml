@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+#   pre_build:
+#     commands:
+#       - npm install
+#       - sed -i 's|%REGISTRATION_API_ENDPOINT_BASE_URL%|'$REGISTRATION_API_ENDPOINT_BASE_URL'|g' src/environments/environment.prod.ts
+#       - sed -i 's|%GOOGLE_RECAPTCHA_SITEKEY%|'$GOOGLE_RECAPTCHA_SITEKEY'|g' src/environments/environment.prod.ts
+#       - sed -i 's|%GOOGLE_ANALYTICS_TRACKING_CODE_ID%|'$GOOGLE_ANALYTICS_TRACKING_CODE_ID'|g' src/index.prod.html
+  build:
+    commands:
+      - npm run build
+
+artifacts:
+  files:
+    - 'build/**/*.html'
+    - 'build/**/*.js'
+    - 'build/**/*.css'
+    - 'build/**/*.svg'
+    - 'build/**/*.ico'
+    - 'build/static/robots.txt'
+    # - 'infrastructure/app.yaml'
+    # - 'infrastructure/app.config'
+    - 'deployment/deployAppSpec.yml'
