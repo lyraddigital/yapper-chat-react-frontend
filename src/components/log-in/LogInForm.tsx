@@ -6,7 +6,7 @@ interface LogInFormProps {
 }
 
 const LogInForm = (props: LogInFormProps) => {
-  const { register, handleSubmit, errors } = useForm();
+  const { register, handleSubmit } = useForm();
   const onSubmit = (data: any) => { 
     props.onFormSubmitted(data.email); 
   };

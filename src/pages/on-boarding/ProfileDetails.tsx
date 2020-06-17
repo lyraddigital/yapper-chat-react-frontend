@@ -8,7 +8,7 @@ const ProfileDetails = () => {
         <input className="profile" type="text" placeholder="Username" />
         <input className="profile" type="text" placeholder="First Name" />
         <input className="profile" type="text" placeholder="Last Name" />
-        <a className="centered-link" href="#">Profile Picture</a>
+        <a className="centered-link" href="/">Profile Picture</a>
         <div className="upload-profile-pic"></div>
         <button>Complete Sign Up</button>
     </Layout>

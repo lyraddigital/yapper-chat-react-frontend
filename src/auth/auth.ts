@@ -29,6 +29,22 @@ export class AuthClient {
         });
     }
 
+    async passwordlessLogin(email: string, code: string): Promise<void> {
+        return await new Promise((resolve, reject) => {
+            this._webAuth.passwordlessLogin({
+                connection: 'email',
+                verificationCode: code,
+                email
+              }, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+
     isAuthenticated(): boolean {
         return false;
     }

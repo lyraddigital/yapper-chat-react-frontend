@@ -33,7 +33,7 @@ const LogIn = () => {
 
   if (isPageValid) {
     const to = { pathname: '/log-in/confirmation', state: { email } };
-    loginResult = <Redirect to={to} />; // , { email });
+    loginResult = <Redirect to={to} />;
   }
 
   return loginResult;
