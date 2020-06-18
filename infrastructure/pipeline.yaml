@@ -28,9 +28,6 @@ Parameters:
   Auth0APIDomain:
     Type: String
     Description: The domain name of the Auth0 API. 
-  Auth0APIRedirectURI:
-    Type: String
-    Description: The chat application URI that will be used to redirect back to from Auth0.
 Resources:
   PipelineArtifactBucket:
     Type: AWS::S3::Bucket
@@ -222,7 +219,7 @@ Resources:
           -
             Name: AUTH0_API_REDIRECT_URI
             Type: PLAINTEXT
-            Value: !Ref Auth0APIRedirectURI
+            Value: !Sub https://${CNameRecordPrefix}.lyraddigital.com/on-boarding/profile
       Artifacts:
         Type: CODEPIPELINE
 
