@@ -1,14 +1,15 @@
 import { WebAuth } from 'auth0-js';
 
+import Config from '../environments/environment';
+
 export class AuthClient {
     private _webAuth: WebAuth;
 
     constructor() {
-        console.log('Hopefully we only see this once');
         this._webAuth = new WebAuth({
-            clientID: 'fGNPpt1oeLVctIHkUhS0xdvbyr1jHYie',
-            domain: 'lyraddigital.au.auth0.com',
-            redirectUri: 'http://localhost:3000/sign-up/profile',
+            clientID: Config.auth0Settings.clientID,
+            domain: Config.auth0Settings.domain,
+            redirectUri: Config.auth0Settings.redirectUri,
             responseType: 'id_token'
         });
     }

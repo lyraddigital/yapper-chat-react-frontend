@@ -24,7 +24,7 @@ const ConfirmationCode = () => {
         // setIsPageValid(true);
       });
     }
-  }, [auth, code]);
+  }, [auth, email, code]);
 
   
   // if (!email) {

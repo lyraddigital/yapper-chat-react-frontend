@@ -4,6 +4,10 @@ phases:
     pre_build:
         commands:
             - npm install
+            - sed -i 's|%AUTH0_API_CLIENT_ID%|'$AUTH0_API_CLIENT_ID'|g' src/environments/environment.prod.ts
+            - sed -i 's|%AUTH0_API_DOMAIN%|'$AUTH0_API_DOMAIN'|g' src/environments/environment.prod.ts
+            - sed -i 's|%AUTH0_API_REDIRECT_URI%|'$AUTH0_API_REDIRECT_URI'|g' src/environments/environment.prod.ts
+            - mv src/environments/environment.prod.ts src/environments/environment.ts
     build:
         commands:
             - npm run build
