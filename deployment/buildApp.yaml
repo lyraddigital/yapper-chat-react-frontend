@@ -20,6 +20,6 @@ artifacts:
         - 'build/**/*.svg'
         - 'build/**/*.ico'
         - 'build/static/robots.txt'
-        # - 'infrastructure/app.yaml'
-        # - 'infrastructure/app.config'
+        - 'infrastructure/app.yaml'
+        - 'infrastructure/app.config'
         - 'deployment/deployAppSpec.yml'
