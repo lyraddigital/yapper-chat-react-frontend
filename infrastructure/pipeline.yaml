@@ -1,0 +1,332 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: This template will create a deployment pipeline needed to deploy the Lyrad Digital website.
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: The name of the environment this pipeline is for.
+  CNameRecordPrefix:
+    Type: String
+    Description: The prefix of the CNAME record for the chat application that this pipeline belongs too. It will be part of the lyraddigital.com Hosted Zone.
+    MinLength: 3
+    MaxLength: 30
+    AllowedPattern: ^[a-z.]*$
+    ConstraintDescription: Environment name must be lowercase only and be between 3 and 30 characters.
+  CertificateManagerCertArn:
+    Type: String
+    Description: The Arn of the SSL Certificate that is declared in AWS's Certificate Manager Service
+    AllowedPattern: "arn:aws:acm:.*"
+    ConstraintDescription: This is not a valid Arn for a certificate in AWS's Certificate Manager Service
+  GitHubBranch:
+    Type: String
+    Description: The name of the branch that will be deployed for this environment.
+  GitHubOAuthToken:
+    Type: String
+    Description: The OAuth token required to fetch the source code from Github for this pipeline
+  Auth0APIClientID:
+    Type: String
+    Description: The client id of the Auth0 API used for authenticating and registering users.
+  Auth0APIDomain:
+    Type: String
+    Description: The domain name of the Auth0 API. 
+  Auth0APIRedirectURI:
+    Type: String
+    Description: The chat application URI that will be used to redirect back to from Auth0.
+Resources:
+  PipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub yapper-chat-artifacts-${EnvironmentName}
+      Tags:
+        - Key: Artifacts Type
+          Value: !Sub Yapper Chat - ${EnvironmentName}
+        - Key: Company
+          Value: Lyrad Digital
+
+  CodeBuildCompileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub Yapper-Chat-Build-Project-Role-${EnvironmentName}
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "codebuild.amazonaws.com"
+      Policies: 
+        - 
+          PolicyName: !Sub Yapper-Chat-Build-Project-Policy-${EnvironmentName}
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+              -
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Join ['', [!GetAtt PipelineArtifactBucket.Arn, '/*']]
+            #   -
+            #     Effect: Allow
+            #     Action:
+            #       - "ssm:GetParameters"
+            #     Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${GoogleAnalyticsTrackingCodeId}"
+
+  CodeBuildDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub Yapper-Chat-Deploy-Project-Role-${EnvironmentName}
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "codebuild.amazonaws.com"
+      Policies: 
+        - 
+          PolicyName: !Sub Yapper-Chat-Deploy-Project-Policy-${EnvironmentName}
+          PolicyDocument:
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "s3:ListBucket"
+                Resource: "*"
+              -
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                Resource: !Join ['', [!GetAtt PipelineArtifactBucket.Arn, '/*']]
+              -
+                Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                  - "s3:DeleteObject"
+                Resource: !Sub "arn:aws:s3:::${CNameRecordPrefix}.lyraddigital.com/*"
+
+  WebsiteInfrastructureCloudformationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub Yapper-Chat-CloudFormation-Role-${EnvironmentName}
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Effect: "Allow"
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: "cloudformation.amazonaws.com"
+      Policies: 
+        - 
+          PolicyName: !Sub Yapper-Chat-CloudFormation-Policy-${EnvironmentName}
+          PolicyDocument:
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - "cloudfront:CreateDistribution"
+                  - "cloudfront:TagResource"
+                  - "cloudfront:GetDistribution"
+                  - "cloudfront:UpdateDistribution"
+                  - "cloudfront:DeleteDistribution"
+                Resource: "*"
+              - 
+                Effect: Allow
+                Action:
+                  - "s3:CreateBucket"
+                  - "s3:PutBucketWebsite"
+                  - "s3:DeleteBucket"
+                Resource: "*"
+              -
+                Effect: Allow
+                Action:
+                  - "route53:ListHostedZones"
+                  - "route53:ChangeResourceRecordSets"
+                  - "route53:GetChange"
+                Resource: "*"
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub Yapper-Chat-CodePipeline-Role-${EnvironmentName}
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "codepipeline.amazonaws.com"
+      Policies: 
+        - 
+          PolicyName: !Sub Yapper-Chat-CodePipeline-Policy-${EnvironmentName}
+          PolicyDocument:
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                Resource: !Join ['', [!GetAtt PipelineArtifactBucket.Arn, '/*']]
+              -
+                Effect: Allow
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                Resource:
+                  - !GetAtt CodeBuildCompileProject.Arn
+                  - !GetAtt CodeBuildDeployProject.Arn
+              -
+                Effect: Allow
+                Action:
+                  - "cloudformation:DescribeStacks"
+                  - "cloudformation:CreateStack"
+                  - "cloudformation:UpdateStack"
+                Resource: !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/Yapper-Chat-${EnvironmentName}-stack/*"
+              -
+                Effect: Allow
+                Action:
+                  - "iam:PassRole"
+                Resource: !GetAtt WebsiteInfrastructureCloudformationRole.Arn
+
+  CodeBuildCompileProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub Yapper-Chat-Build-Project-${EnvironmentName}
+      ServiceRole: !Ref CodeBuildCompileRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: deployment/buildAppSpec.yml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          -
+            Name: AUTH0_API_CLIENT_ID
+            Type: PLAINTEXT
+            Value: !Ref Auth0APIClientID
+          -
+            Name: AUTH0_API_DOMAIN
+            Type: PLAINTEXT
+            Value: !Ref Auth0APIDomain
+          -
+            Name: AUTH0_API_REDIRECT_URI
+            Type: PLAINTEXT
+            Value: !Ref Auth0APIRedirectURI
+      Artifacts:
+        Type: CODEPIPELINE
+
+  CodeBuildDeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub Yapper-Chat-Deploy-Project-${EnvironmentName}
+      ServiceRole: !Ref CodeBuildDeployRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: deployment/deployAppSpec.yml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          -
+            Name: WEBSITE_BUCKET
+            Type: PLAINTEXT
+            Value: !Sub s3://${CNameRecordPrefix}.lyraddigital.com
+      Artifacts:
+        Type: CODEPIPELINE
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub Yapper-Chat-CodePipeline-${EnvironmentName}
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+          Location: !Ref PipelineArtifactBucket
+          Type: S3
+      Stages:
+        -
+          Name: Source
+          Actions:
+            - 
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: "lyraddigital"
+                Repo: "yapper-chat-react-frontend"
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubOAuthToken
+              OutputArtifacts:
+                -  
+                  Name: Source
+        -
+          Name: Build
+          Actions:
+            -
+              Name: Build
+              InputArtifacts:
+                - 
+                  Name: Source
+              ActionTypeId: 
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              OutputArtifacts:
+                - 
+                  Name: Built
+              Configuration: 
+                ProjectName: !Ref CodeBuildCompileProject
+        -
+          Name: Deploy
+          Actions:
+            -
+              Name: Update-Website-Infrastructure
+              InputArtifacts:
+                - 
+                  Name: Built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt WebsiteInfrastructureCloudformationRole.Arn
+                StackName: !Sub Yapper-Chat-${EnvironmentName}-stack
+                TemplatePath: Built::infrastructure/app.yaml
+                TemplateConfiguration: Built::infrastructure/app.config
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "CNameRecordPrefix": "${CNameRecordPrefix}",
+                    "CertificateManagerCertArn": "${CertificateManagerCertArn}"
+                  }
+              RunOrder: 1
+            -
+              Name: Deploy-Website
+              InputArtifacts:
+                - 
+                  Name: Built
+              ActionTypeId: 
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration: 
+                ProjectName: !Ref CodeBuildDeployProject
+              RunOrder: 2

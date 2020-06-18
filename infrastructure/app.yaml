@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: This template will create the S3 bucket that hosts the Yapper Chat application.
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: The name of the environment this S3 Bucket will host the application for.
+  CNameRecordPrefix:
+    Type: String
+    Description: The prefix of the CNAME record for the application that this pipeline belongs too. It will be part of the lyraddigital.com Hosted Zone.
+    MinLength: 3
+    MaxLength: 30
+    AllowedPattern: ^[a-z.]*$
+    ConstraintDescription: Environment name must be lowercase only and be between 3 and 30 characters.
+  CertificateManagerCertArn:
+    Type: String
+    Description: The Arn of the SSL Certificate that is declared in AWS's Certificate Manager Service
+    AllowedPattern: "arn:aws:acm:.*"
+    ConstraintDescription: This is not a valid Arn for a certificate in AWS's Certificate Manager Service
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${CNameRecordPrefix}.lyraddigital.com
+      Tags:
+        - Key: Application Name
+          Value: Yapper Chat Application
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Company
+          Value: Lyrad Digital
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+    DeletionPolicy: Delete
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Sub ${CNameRecordPrefix}.lyraddigital.com
+        Comment: Cloudfront Distribution for the Lyrad Digital Website hosted in S3.
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - HEAD
+            - GET
+          CachedMethods:
+            - HEAD
+            - GET
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+          TargetOriginId: WebsiteS3BucketId
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2
+        Origins:
+          -
+            DomainName: !Sub ${CNameRecordPrefix}.lyraddigital.com.s3-website-${AWS::Region}.amazonaws.com
+            Id: WebsiteS3BucketId
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateManagerCertArn
+          SslSupportMethod: sni-only
+
+  CNameRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: lyraddigital.com.
+      Name: !Sub ${CNameRecordPrefix}.lyraddigital.com.
+      ResourceRecords:
+        - !GetAtt Distribution.DomainName
+      Type: CNAME
+      TTL: 300
